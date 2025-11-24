@@ -1,24 +1,15 @@
 import online
 import agents
 
-num_games = 1000000
 
-def main():
-    print_hands = False
-    num_iterations = num_games
-    #num_iterations = 100
-    games_played = num_iterations
-
-    bj_game = online.game()
-    #agent = RL_Agent_Naive()
-    agent = agents.RL_Agent_Naive_ValueBased()
+def simulate_games(num_iterations, bj_game:online.game, agent:agents.RL_Agent, print_hands=False, learning=True):
     wins = 0.0
     losses = 0.0
     ties = 0.0
 
     while(num_iterations > 0):
         num_iterations -= 1
-        if (num_iterations == 0):
+        if (num_iterations == 0 and print_hands):
             print("Debug statement")
         bj_game.new_game()
         
@@ -26,7 +17,12 @@ def main():
         states = []
         while(result == 2):
             state = (bj_game.get_player_cards(), bj_game.get_dealer_cards())
-            agent_action = agent.get_action_learning(state)
+
+            if (learning):
+                agent_action = agent.get_action_learning(state)
+            else:
+                agent_action = agent.get_action_trained(state)
+
             states.append((state, agent_action))
             result = bj_game.act(agent_action)
         agent.update_agent(states, result)
@@ -47,11 +43,38 @@ def main():
             if (print_hands):
                 print("Lost, player hand: ", agent_hand, " | dealer hand: ", dealer_hand)
             continue
-    
-    print("Training completed for ", games_played, " iterations.")
+    print("Simulation completed.")
+    return (wins, ties, losses)
+
+def print_game(wins, ties, losses):
+    games_played = wins+ties+losses
+    print("Results after ", games_played, " iterations.")
     print("Winrate: ",  f"{(wins / games_played) * 100:.2f}", "%", " | ",
           "Tierate: ",  f"{(ties / games_played) * 100:.2f}", "%", " | ",
           "Lossrate: ", f"{(losses / games_played) * 100:.2f}", "%")
+
+def evaluate_agent(games_played, game:online.game, agent:agents.RL_Agent, train=True):
+    if (train):
+        _ = simulate_games(games_played, game, agent)
+
+    wins, ties, losses = simulate_games(games_played, game, agent, learning=False)
+    print_game(wins, ties, losses)
+    
+
+def main():
+    games_played = 1000000
+    #games_played = 100000
+
+    game = online.game()
+
+    random_agent = agents.Random_Agent()
+    evaluate_agent(games_played, game, random_agent, train=False)
+
+    naive_agent = agents.RL_Agent_Naive()
+    evaluate_agent(games_played, game, naive_agent)
+
+    value_agent = agents.RL_Agent_Naive_ValueBased()
+    evaluate_agent(games_played, game, value_agent)
 
 
 if __name__ == '__main__':

@@ -66,9 +66,6 @@ class game:
         if (action == 0):
             # Game is over, someone will win or end in a tie
             self.ongoing = False
-            # Dealer wins as player stood when dealer had higher value
-            if (dealer_value > player_value):
-                return -1
             
             # Dealer draws until atleast 17 then they stand
             while (dealer_value < 17):

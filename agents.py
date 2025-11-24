@@ -69,6 +69,17 @@ class RL_Agent:
             prev_probs += action_probability
         
         return len(action_probabilities) - 1
+    
+    def get_action_trained(self, state):
+        p_hand, d_hand = state
+        action_probabilities = self.action_probabilities(p_hand, d_hand)
+        max = action_probabilities[0]
+        idx = 0
+        for i in range(1, len(action_probabilities)):
+            if (action_probabilities[i] > max):
+                max = action_probabilities[i]
+                idx = i
+        return idx
 
     def update_agent(self, states_visited, outcome):
         """
@@ -107,8 +118,14 @@ class RL_Agent:
             if (outcome == 0):
                 continue
 
+class Random_Agent(RL_Agent):
+    # Winrate:  30.02 %  |  Tierate:  3.58 %  |  Lossrate:  66.40 % | 1000000 games
+
+    def get_action_trained(self, state):
+        return self.rl_rand.randint(0, len(default_probabilities) - 1)
+    
 class RL_Agent_Naive(RL_Agent):
-    # Winrate:  35.91 %  |  Tierate:  5.02 %  |  Lossrate:  59.07 % | 1000000 games
+    # Winrate:  42.14 %  |  Tierate:  6.86 %  |  Lossrate:  51.00 % | 1000000 games
 
     def hands_to_hash(self, player_hand, dealer_hand):
         """
@@ -129,7 +146,7 @@ class RL_Agent_Naive(RL_Agent):
         return states_hash
 
 class RL_Agent_Naive_ValueBased(RL_Agent):
-    # 36.26 %  |  Tierate:  5.06 %  |  Lossrate:  58.67 % | 1000000 games
+    # Winrate:  41.93 %  |  Tierate:  6.90 %  |  Lossrate:  51.16 % | 1000000 games
     
     def hands_to_hash(self, player_hand, dealer_hand):
         """
