@@ -62,24 +62,30 @@ class RL_Agent:
         action_probabilities = self.action_probabilities(p_hand, d_hand)
         prev_probs = 0.0
         rand_action_num = self.rl_rand.random()
+
+        chosen_action = len(action_probabilities) - 1
         for i in range(len(action_probabilities)):
             action_probability = action_probabilities[i]
             if (rand_action_num <= prev_probs + action_probability):
-                return i
+                chosen_action = i
+                break
             prev_probs += action_probability
-        
-        return len(action_probabilities) - 1
+    
+        action = helpers.idx_to_action(chosen_action)
+        return action
     
     def get_action_trained(self, state):
         p_hand, d_hand = state
         action_probabilities = self.action_probabilities(p_hand, d_hand)
         max = action_probabilities[0]
-        idx = 0
+        chosen_action = 0
         for i in range(1, len(action_probabilities)):
             if (action_probabilities[i] > max):
                 max = action_probabilities[i]
-                idx = i
-        return idx
+                chosen_action = i
+
+        action = helpers.idx_to_action(chosen_action)
+        return action
 
     def update_agent(self, states_visited, outcome):
         """
@@ -104,27 +110,46 @@ class RL_Agent:
                 self.states[hand_hash] = copy_arr
 
             state = self.states[hand_hash]
+            action_idx = taken_action.value
 
-            if (outcome == 1):
-                state[taken_action] += 1
+            if (outcome == helpers.result.AGENT_WON):
+                state[action_idx] += 1
                 continue
-            if (outcome == -1):
-                dist_value = len(state)-1
-                for action in range(len(state)):
-                    if(action != taken_action):
-                        state[action] += dist_value
+            if (outcome == helpers.result.DEALER_WON):
+                dist_value = len(default_probabilities)-1
+                for index in range(len(state)):
+                    if (index != action_idx):
+                        state[index] += dist_value
                 continue
             # Tie game, don't update policy as no useful information can be gained
-            if (outcome == 0):
+            if (outcome == helpers.result.TIE):
                 continue
 
-class Random_Agent(RL_Agent):
+class Online_Agent(RL_Agent):
+    visited_states = []
+    def __init__(self):
+        super().__init__()
+        self.visited_states = []
+
+    def get_action_learning(self, state):
+        action = super().get_action_learning(state)
+        self.visited_states.append((state, action))
+        return action
+    
+    def update_agent(self, outcome):
+        ret = super().update_agent(self.visited_states, outcome)
+        self.visited_states = []
+        return ret
+
+class Random_Agent(Online_Agent):
     # Winrate:  30.02 %  |  Tierate:  3.58 %  |  Lossrate:  66.40 % | 1000000 games
 
     def get_action_trained(self, state):
-        return self.rl_rand.randint(0, len(default_probabilities) - 1)
+        chosen_action = self.rl_rand.randint(0, len(default_probabilities) - 1)
+        action = helpers.idx_to_action(chosen_action)
+        return action
     
-class RL_Agent_Naive(RL_Agent):
+class RL_Agent_Naive(Online_Agent):
     # Winrate:  42.14 %  |  Tierate:  6.86 %  |  Lossrate:  51.00 % | 1000000 games
 
     def hands_to_hash(self, player_hand, dealer_hand):
@@ -145,7 +170,7 @@ class RL_Agent_Naive(RL_Agent):
 
         return states_hash
 
-class RL_Agent_Naive_ValueBased(RL_Agent):
+class RL_Agent_Naive_ValueBased(Online_Agent):
     # Winrate:  41.93 %  |  Tierate:  6.90 %  |  Lossrate:  51.16 % | 1000000 games
     
     def hands_to_hash(self, player_hand, dealer_hand):

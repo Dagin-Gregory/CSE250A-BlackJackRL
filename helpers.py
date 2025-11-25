@@ -1,3 +1,30 @@
+from enum import Enum
+
+class actions(Enum):
+    STAND = 0
+    HIT = 1
+    DOUBLE_DOWN = 2
+    SPLIT = 3
+
+class result(Enum):
+    DEALER_WON = -1
+    TIE = 0
+    AGENT_WON = 1
+    ONGOING = 2
+
+def idx_to_action(int_action):
+    if (int_action == actions.STAND.value):
+        return actions.STAND
+    
+    if (int_action == actions.HIT.value):
+        return actions.HIT
+    
+    if (int_action == actions.DOUBLE_DOWN.value):
+        return actions.DOUBLE_DOWN
+    
+    if (int_action == actions.SPLIT.value):
+        return actions.SPLIT
+
 def evaluate_hand(hand):
     """
     Returns the maximum value of the hand, taking the multiple values an ace can take into account

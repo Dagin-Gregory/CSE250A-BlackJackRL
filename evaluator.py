@@ -1,6 +1,6 @@
 import online
 import agents
-
+import helpers
 
 def simulate_games(num_iterations, bj_game:online.game, agent:agents.RL_Agent, print_hands=False, learning=True):
     wins = 0.0
@@ -13,9 +13,8 @@ def simulate_games(num_iterations, bj_game:online.game, agent:agents.RL_Agent, p
             print("Debug statement")
         bj_game.new_game()
         
-        result = 2
-        states = []
-        while(result == 2):
+        result = helpers.result.ONGOING
+        while(result == helpers.result.ONGOING):
             state = (bj_game.get_player_cards(), bj_game.get_dealer_cards())
 
             if (learning):
@@ -23,22 +22,22 @@ def simulate_games(num_iterations, bj_game:online.game, agent:agents.RL_Agent, p
             else:
                 agent_action = agent.get_action_trained(state)
 
-            states.append((state, agent_action))
             result = bj_game.act(agent_action)
-        agent.update_agent(states, result)
+
+        agent.update_agent(result)
         agent_hand = bj_game.get_player_cards()
         dealer_hand = bj_game.get_dealer_cards()
-        if (result == 1):
+        if (result == helpers.result.AGENT_WON):
             wins += 1
             if (print_hands):
                 print("Won, player hand: ", agent_hand, " | dealer hand: ", dealer_hand)
             continue
-        if (result == 0):
+        if (result == helpers.result.TIE):
             ties += 1
             if (print_hands):
                 print("Tied, player hand: ", agent_hand, " | dealer hand: ", dealer_hand)
             continue
-        if (result == -1):
+        if (result == helpers.result.DEALER_WON):
             losses += 1
             if (print_hands):
                 print("Lost, player hand: ", agent_hand, " | dealer hand: ", dealer_hand)
@@ -63,9 +62,10 @@ def evaluate_agent(games_played, game:online.game, agent:agents.RL_Agent, train=
 
 def main():
     games_played = 1000000
-    #games_played = 100000
+    #games_played = 100
 
-    game = online.game()
+    game = online.game(bust_thresh=21,
+                       hit_thresh=17)
 
     random_agent = agents.Random_Agent()
     evaluate_agent(games_played, game, random_agent, train=False)
