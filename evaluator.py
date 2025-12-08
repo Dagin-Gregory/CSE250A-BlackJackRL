@@ -107,8 +107,11 @@ def main():
     games_played = 1000000
     #games_played = 100000
 
-    game = online.game(bust_thresh=21,
-                       hit_thresh=21)
+    #game = online.game(bust_thresh=21,
+    #                   hit_thresh=21)
+    game = online.finite_deck_game(bust_thresh=21,
+                                   hit_thresh=21,
+                                   num_decks=6)
 
     random_agent = agents.Random_Agent()
     evaluate_agent(games_played, game, random_agent, train=False)

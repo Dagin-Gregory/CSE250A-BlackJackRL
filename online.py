@@ -11,7 +11,9 @@ class game:
     previous_seed = time.time_ns()
     ongoing = False
     game_rand = random.Random(previous_seed)
-    def __init__(self, bust_thresh=21, hit_thresh=17):
+    def __init__(self,
+                 bust_thresh=21,
+                 hit_thresh=17):
         self.dealer_cards = []
         self.player_cards = []
         self.ongoing = False
@@ -45,6 +47,7 @@ class game:
             # Player always starts with 2
             self.player_cards.append(self.draw_card())
             self.player_cards.append(self.draw_card())
+            return False
 
     def act(self, action):
         """
@@ -106,3 +109,56 @@ class game:
             if (player_value <= self.init_BUST_THRESHOLD):
                 return helpers.result.ONGOING
 
+
+class finite_deck_game(game):
+    total_decks = 3
+    reshuffle_threshold = .15
+    dealer_hole_card = 0
+    card_list = []
+
+    def __init__(self,
+                 bust_thresh=21,
+                 hit_thresh=17,
+                 num_decks=3,
+                 reshuffle_thresh=.15):
+        super().__init__(bust_thresh, hit_thresh)
+        self.total_decks = num_decks
+        self.reshuffle_threshold = reshuffle_thresh
+        self.card_list = []
+        self.dealer_hole_card = 0
+
+    def shuffle_deck(self):
+        self.card_list = []
+        cards_left = []
+        for i in range(1, 13+1):
+            for j in range(self.total_decks * 4):
+                cards_left.append(i)
+        
+        while (len(cards_left) > 0):
+            rand_index = self.game_rand.randint(0, len(cards_left)-1)
+            self.card_list.append(cards_left[rand_index])
+            _ = cards_left.pop(rand_index)
+
+    def draw_card(self):
+        top_card = self.card_list.pop()
+        return top_card
+    
+    def reshuffle_if_necessary(self):
+        if (len(self.card_list) <= self.reshuffle_threshold * self.total_decks * 52):
+            self.shuffle_deck()
+            return True
+        return False
+    
+    def new_game(self):
+        reshuffled = self.reshuffle_if_necessary()
+        self.dealer_hole_card = self.draw_card()
+        super().new_game()
+        return reshuffled
+
+    def act(self, action):
+        if (self.dealer_hole_card != 0):
+            self.dealer_cards.append(self.dealer_hole_card)
+            self.dealer_hole_card = 0
+
+        value = super().act(action)
+        return value
